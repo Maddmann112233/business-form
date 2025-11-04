@@ -13,7 +13,7 @@ ID_COLUMN_CANDIDATES = ["id", "ID", "Id", "request_id", "ticket_id"]
 JSON_COLUMN_NAME = None  # set to explicit column if you know it, else auto-detect
 STATE_COLUMN = "State"
 REQUIRED_STATE = "Waiting For Business"
-WEBHOOK_COLUMN = "Authorize"
+WEBHOOK_COLUMN = "Business Authorize"
 # =====================================
 
 st.set_page_config(page_title="MOH Business Owner", layout="wide")
