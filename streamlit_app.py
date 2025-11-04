@@ -13,7 +13,7 @@ JSON_COLUMN_NAME = None
 
 st.set_page_config(page_title="MOH Business Owner", layout="wide")
 
-# RTL styling and Arabic font
+# --- Custom Styling (Arabic + Center Alignment) ---
 st.markdown(
     """
     <style>
@@ -21,22 +21,41 @@ st.markdown(
         direction: rtl;
         text-align: right;
         font-family: 'Tahoma', sans-serif;
+        background-color: #0e1117;
+        color: #ffffff;
+    }
+    h1, h2, h3, h4 {
+        text-align: center;
+        font-family: 'Tahoma', sans-serif;
+    }
+    .header-container {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .search-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-top: 20px;
     }
     .stButton>button {
-        width: 150px;
         background-color: #0A66C2;
         color: white;
         font-weight: bold;
         border-radius: 8px;
-        height: 40px;
+        width: 120px;
+        height: 42px;
+        font-size: 16px;
+    }
+    .stTextInput>div>div>input {
+        text-align: center;
+        direction: rtl;
+        font-size: 16px;
     }
     .stRadio label {
         font-size: 16px;
         font-weight: 600;
-    }
-    h1, h2, h3 {
-        text-align: center;
-        font-family: 'Tahoma', sans-serif;
     }
     </style>
     """,
@@ -44,10 +63,17 @@ st.markdown(
 )
 
 # --- Header ---
-st.markdown("<h2>MOH Business Owner</h2>", unsafe_allow_html=True)
-st.markdown("<h4>نظام مراجعة طلبات مشاركة البيانات</h4>", unsafe_allow_html=True)
+st.markdown(
+    """
+    <div class="header-container">
+        <h2>MOH Business Owner</h2>
+        <h4>نظام مراجعة طلبات مشاركة البيانات</h4>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-# --- Google Sheets connection ---
+# --- Google Sheets Connection ---
 def _gspread_client():
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
@@ -94,26 +120,27 @@ def parse_json_to_table(text: str) -> pd.DataFrame | None:
 
     return pd.DataFrame({"القيمة": [data]})
 
-# --- UI Layout ---
+# --- Load Data ---
 df = load_sheet(SPREADSHEET_ID, WORKSHEET_NAME)
-
 id_col = next((c for c in ID_COLUMN_CANDIDATES if c in df.columns), None)
 if not id_col:
     st.error("⚠️ لم يتم العثور على عمود للـ ID في الورقة.")
     st.stop()
 
-st.markdown("### 🔍 البحث برقم الطلب")
+# --- Centered Search Box ---
+st.markdown("<h3>🔍 البحث برقم الطلب</h3>", unsafe_allow_html=True)
 
-col1, col2 = st.columns([3, 1])
-with col1:
-    search_id = st.text_input("أدخل رقم الطلب (ID):", key="search_id", label_visibility="collapsed")
-with col2:
-    do_search = st.button("بحث")
+# Center search input and button using columns
+col_center = st.columns([1, 3, 1])
+with col_center[1]:
+    search_id = st.text_input("أدخل رقم الطلب:", key="search_id", label_visibility="collapsed")
+    search_btn = st.button("بحث", use_container_width=True)
 
-if do_search and not search_id.strip():
+# --- Search Logic ---
+if search_btn and not search_id.strip():
     st.warning("يرجى إدخال رقم الطلب أولاً.")
 
-if do_search and search_id.strip():
+if search_btn and search_id.strip():
     mask = df[id_col].astype(str).str.strip().str.lower() == search_id.strip().lower()
     match = df[mask]
 
@@ -130,18 +157,18 @@ if do_search and search_id.strip():
             if table is None:
                 st.error("⚠️ تعذر قراءة بيانات JSON.")
             else:
-                st.markdown("### 📋 تفاصيل الطلب")
+                st.markdown("<h3>📋 تفاصيل الطلب</h3>", unsafe_allow_html=True)
                 st.dataframe(table, use_container_width=True)
 
-                st.markdown("---")
-                st.markdown("### 💬 القرار")
+                st.markdown("<hr>", unsafe_allow_html=True)
+                st.markdown("<h3>💬 القرار</h3>", unsafe_allow_html=True)
 
                 decision = st.radio("يرجى اختيار القرار:", ["موافقة", "عدم موافقة"], horizontal=True, index=0)
                 reason = ""
                 if decision == "عدم موافقة":
                     reason = st.text_area("سبب الرفض (إلزامي):")
 
-                send = st.button("إرسال القرار")
+                send = st.button("إرسال القرار", use_container_width=False)
 
                 if send:
                     if decision == "عدم موافقة" and not reason.strip():
@@ -153,7 +180,7 @@ if do_search and search_id.strip():
                             "reason": reason.strip(),
                         }
 
-                        # Placeholder for webhook integration:
+                        # Example: send to n8n webhook
                         # import requests
                         # WEBHOOK_URL = "https://tofyz.app.n8n.cloud/webhook-test/moh-form"
                         # requests.post(WEBHOOK_URL, json=payload, timeout=10)
