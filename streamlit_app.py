@@ -1,4 +1,5 @@
 import json
+import time
 import pandas as pd
 import streamlit as st
 import gspread
@@ -125,7 +126,8 @@ set_background("Gemini_Generated_Image_ls8zmgls8zmgls8z.png")
 st.markdown('<h2>MOH Business Owner</h2><h4>نظام مراجعة طلبات مشاركة البيانات</h4>', unsafe_allow_html=True)
 
 # ====== Google Sheets ======
-def _gspread_client():
+@st.cache_resource
+def gspread_client():
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive.readonly",
@@ -135,10 +137,8 @@ def _gspread_client():
 
 @st.cache_data(ttl=60)
 def load_sheet(spreadsheet_id, worksheet_name) -> pd.DataFrame:
-    gc = _gspread_client()
-    ws = gc.open_by_key(spreadsheet_id).worksheet(worksheet_name)
-    data = ws.get_all_records()
-    return pd.DataFrame(data)
+    ws = gspread_client().open_by_key(spreadsheet_id).worksheet(worksheet_name)
+    return pd.DataFrame(ws.get_all_records())
 
 def detect_json_column(row: pd.Series):
     for col, val in row.items():
@@ -148,25 +148,30 @@ def detect_json_column(row: pd.Series):
                 return col
     return None
 
+def clean_json_text(s: str) -> str:
+    s = s.strip().lstrip("\ufeff")
+    if s.startswith("```"):
+        parts = s.split("```")
+        if len(parts) >= 3:
+            return parts[2].strip() if parts[1].lower().strip() == "json" else parts[1].strip()
+    return s
+
 def parse_json_to_table(text: str) -> pd.DataFrame | None:
     try:
-        data = json.loads(text)
+        data = json.loads(clean_json_text(text))
     except Exception:
         return None
-
     if isinstance(data, list):
         if not data:
             return pd.DataFrame()
         if all(isinstance(x, dict) for x in data):
             return pd.json_normalize(data, max_level=1)
         return pd.DataFrame({"القيمة": data})
-
     if isinstance(data, dict):
         flat = pd.json_normalize(data, max_level=1)
         if flat.shape[0] == 1:
             return pd.DataFrame(flat.iloc[0]).reset_index(names=["الحقل"]).rename(columns={0: "القيمة"})
         return flat
-
     return pd.DataFrame({"القيمة": [data]})
 
 def is_valid_url(s: str) -> bool:
@@ -177,11 +182,23 @@ def is_valid_url(s: str) -> bool:
     except Exception:
         return False
 
+def post_with_retry(url: str, payload: dict, retries=3, timeout=15):
+    last = None
+    for i in range(retries):
+        try:
+            r = requests.post(url, json=payload, timeout=timeout)
+            r.raise_for_status()
+            return r
+        except Exception as e:
+            last = e
+            time.sleep(1.5 * (i + 1))
+    raise last
+
 # ====== تحميل البيانات ======
 df = load_sheet(SPREADSHEET_ID, WORKSHEET_NAME)
 id_col = next((c for c in ID_COLUMN_CANDIDATES if c in df.columns), None)
 if not id_col:
-    st.error("لم يتم العثور على عمود يحتوي على المعرف (ID).")
+    st.error(f"لم يتم العثور على عمود يحتوي على المعرف (ID). الأعمدة الحالية: {list(df.columns)}")
     st.stop()
 
 # ====== البحث برقم الطلب ======
@@ -232,60 +249,53 @@ if selected_row is not None:
         st.error("تعذر تحليل محتوى JSON.")
         st.stop()
 
-    # 👇 نزيل عمود العد (الفهرس) ونخفيه في العرض
-    table = table.reset_index(drop=True)
-    st.markdown("### تفاصيل الطلب")
-    st.dataframe(table, use_container_width=True, hide_index=True)
+    # ====== إنشاء جدول قابل للتحرير ======
+    editable = table.copy()
+    editable["القرار"] = editable.get("القرار", "مقبول")
+    editable["ملاحظات"] = editable.get("ملاحظات", "")
 
-    # ====== قراءة رابط الويب هوك ======
+    st.markdown("### تفاصيل الطلب")
+    edited = st.data_editor(
+        editable.reset_index(drop=True),
+        use_container_width=True,
+        hide_index=True,
+        num_rows="fixed",
+        column_config={
+            "القرار": st.column_config.SelectboxColumn(
+                "القرار", options=["مقبول", "مرفوض"], width="small"
+            ),
+            "ملاحظات": st.column_config.TextColumn(
+                "ملاحظات", help="يمكنك كتابة ملاحظات حتى لو تمت الموافقة", width="medium"
+            ),
+        }
+    )
+
+    # ====== تحقق أن المرفوض لديه ملاحظات ======
+    missing_notes = any(
+        (row["القرار"] == "مرفوض" and not str(row["ملاحظات"]).strip())
+        for _, row in edited.iterrows()
+    )
+
     webhook_url = str(selected_row.get(WEBHOOK_COLUMN, "")).strip()
     if not is_valid_url(webhook_url):
         st.warning(f"تعذر العثور على رابط ويب هوك صالح في العمود '{WEBHOOK_COLUMN}'.")
 
-    # ====== واجهة القرار ======
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown("### القرار")
-
-    if "decision" not in st.session_state:
-        st.session_state.decision = "موافقة"
-    if "reason" not in st.session_state:
-        st.session_state.reason = ""
-
-    with st.container():
-        st.markdown('<div class="segmented">', unsafe_allow_html=True)
-        st.session_state.decision = st.radio(
-            "اختر القرار:",
-            ["موافقة", "غير موافق"],
-            horizontal=True,
-            key="decision_radio_ar",
-            index=0 if st.session_state.decision == "موافقة" else 1,
-            label_visibility="collapsed",
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    if st.session_state.decision == "غير موافق":
-        st.session_state.reason = st.text_area("سبب الرفض (إلزامي):", value=st.session_state.reason, key="reason_ar")
-    else:
-        st.session_state.reason = ""
-
-    submit = st.button("إرسال القرار")
-
+    submit = st.button("إرسال القرارات")
     if submit:
-        if st.session_state.decision == "غير موافق" and not st.session_state.reason.strip():
-            st.warning("يرجى كتابة سبب الرفض قبل الإرسال.")
+        if missing_notes:
+            st.warning("يرجى كتابة ملاحظات لكل عنصر مرفوض قبل الإرسال.")
         else:
+            # بناء مصفوفة العناصر
+            items = []
+            for _, row in edited.iterrows():
+                item = {
+                    "decision": row["القرار"],
+                    "note": str(row["ملاحظات"]).strip(),
+                    "data": {
+                        k: v for k, v in row.items() if k not in ["القرار", "ملاحظات"]
+                    },
+                }
+                items.append(item)
+
             payload = {
-                "id": selected_id,
-                "decision": st.session_state.decision,
-                "reason": st.session_state.reason.strip(),
-                "state_checked": REQUIRED_STATE,
-            }
-            if is_valid_url(webhook_url):
-                try:
-                    r = requests.post(webhook_url, json=payload, timeout=15)
-                    r.raise_for_status()
-                    st.success("تم إرسال القرار بنجاح.")
-                except Exception as e:
-                    st.error(f"تعذر إرسال القرار عبر الويب هوك: {e}")
-            else:
-                st.info("لم يتم إرسال القرار لعدم توفر رابط ويب هوك صالح.")
+                "id": se
