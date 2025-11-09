@@ -1,19 +1,43 @@
-# :earth_americas: GDP dashboard template
+# MOH Admin / Business Owner App
 
-A simple Streamlit app showing the GDP of different countries in the world.
+A Streamlit app that reads/writes to Google Sheets and triggers n8n webhooks for MOH data requests.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://gdp-dashboard-template.streamlit.app/)
+---
 
-### How to run it on your own machine
+## Table of Contents
+- [Quick Start](#quick-start)
+- [Requirements](#requirements)
+- [Local Setup](#local-setup)
+- [Environment Variables](#environment-variables)
+- [Running the App](#running-the-app)
+- [Project Structure](#project-structure)
+- [Git Workflow](#git-workflow)
+- [Commit Messages](#commit-messages)
+- [Pull Requests](#pull-requests)
+- [Handling Merge Conflicts](#handling-merge-conflicts)
+- [Versioning & Releases](#versioning--releases)
+- [Testing](#testing)
+- [CI/CD](#cicd)
+- [License](#license)
 
-1. Install the requirements
+---
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+## Quick Start
 
-2. Run the app
+```bash
+# 1) Clone
+git clone <YOUR_REPO_URL>.git
+cd <YOUR_REPO_NAME>
 
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+# 2) Create & activate venv
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
+
+# 3) Install deps
+pip install -r requirements.txt
+
+# 4) Run
+streamlit run streamlit_app.py
