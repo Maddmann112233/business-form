@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 import gspread
 import requests
+import base64
 from urllib.parse import urlparse
 from google.oauth2.service_account import Credentials
 
@@ -12,48 +13,125 @@ WORKSHEET_NAME = "Sheet1"
 ID_COLUMN_CANDIDATES = ["id", "ID", "Id", "request_id", "ticket_id"]
 STATE_COLUMN = "State"
 REQUIRED_STATE = "Waiting For Business"
-WEBHOOK_COLUMN = "Business Authorize"    # سيتم قراءة الويب هوك من هذا العمود
-JSON_COLUMN_NAME = None                  # ضع اسم عمود JSON إن أردت تجاوز الاكتشاف الآلي
+WEBHOOK_COLUMN = "Business Authorize"
+JSON_COLUMN_NAME = None
 # ===========================================
 
 st.set_page_config(page_title="MOH Business Owner", layout="wide")
 
-# ====== تنسيق عربي وواجهة متوازنة ======
-st.markdown("""
-<style>
-/* RTL */
-body, .stApp { direction: rtl; text-align: right; font-family: Tahoma, Arial, sans-serif; }
-h1, h2, h3, h4 { text-align: center; }
+# ====== الخلفية + الثيم المتوافق مع الصورة الجديدة ======
+def set_background(png_file):
+    with open(png_file, "rb") as f:
+        data = f.read()
+    encoded = base64.b64encode(data).decode()
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{encoded}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            color: #E9F5FF;
+        }}
+        /* overlay أزرق/بنفسجي لزيادة تباين النص */
+        .stApp::before {{
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+              radial-gradient(60% 80% at 75% 25%, rgba(33, 0, 95, .35) 0%, rgba(10, 12, 26, .65) 60%),
+              linear-gradient(180deg, rgba(0, 0, 0, .15), rgba(0, 0, 0, .35));
+            pointer-events: none;
+            z-index: 0;
+        }}
 
-/* أزرار */
-.stButton>button {
-  background-color:#0A66C2; color:#fff; font-weight:600;
-  border-radius:10px; height:42px; padding:0 18px; border:none;
-}
+        /* لوحة ألوان مستخرجة من الخلفية */
+        :root {{
+            --electric: #00E5FF;     /* سماوي متوهج */
+            --violet:  #7C4DFF;     /* بنفسجي نيون */
+            --indigo:  #1A1F3B;     /* داكن أساسي */
+            --glass:   rgba(13, 16, 34, 0.42);
+            --glass-2: rgba(13, 16, 34, 0.55);
+            --border:  rgba(124, 77, 255, 0.35);
+            --text:    #E9F5FF;
+            --muted:   #B9D7FF;
+        }}
 
-/* مربع نص */
-.stTextInput>div>div>input { direction: rtl; text-align: center; font-size:16px; }
+        body, .stApp {{ direction: rtl; text-align: right; font-family: Tahoma, Arial, sans-serif; }}
+        .block-container {{ padding-top: 24px; position: relative; z-index: 1; }}
+        .block-container > :not(style) {{ backdrop-filter: blur(6px); }}
 
-/* محوّلات القرار (راديو) بشكل تبويب/شرائح */
-.segmented .stRadio > div { display:flex; gap:8px; justify-content:center; }
-.segmented .stRadio label { 
-  padding:10px 18px; border:1px solid #2a2f3a; border-radius:999px;
-  cursor:pointer; font-weight:700; user-select:none;
-}
-.segmented .stRadio input { display:none; }
-.segmented .stRadio label:hover { background:#19202a; }
-.segmented .stRadio [aria-checked="true"] + span { 
-  background:#0A66C2; color:#fff; border-color:#0A66C2; 
-}
+        h1, h2, h3, h4 {{
+            color: var(--electric) !important;
+            text-shadow: 0 1px 12px rgba(0,0,0,.35);
+            text-align: center;
+        }}
 
-/* صناديق التنبيه بالعربي */
-.block-container { padding-top: 24px; }
-</style>
-""", unsafe_allow_html=True)
+        /* أزرار */
+        .stButton>button {{
+            background: linear-gradient(135deg, var(--violet), var(--electric));
+            color: #0B1020;
+            font-weight: 800;
+            border: 0;
+            border-radius: 14px;
+            height: 44px;
+            padding: 0 22px;
+            box-shadow: 0 12px 30px rgba(0, 229, 255, .22), inset 0 0 0 1px rgba(255,255,255,.12);
+            transition: transform .06s ease, box-shadow .2s ease, filter .2s ease;
+        }}
+        .stButton>button:hover {{ filter: brightness(1.06); box-shadow: 0 16px 36px rgba(124, 77, 255, .28); }}
+        .stButton>button:active {{ transform: translateY(1px) scale(.99); }}
+
+        /* مدخلات ونصوص */
+        .stTextInput>div>div>input,
+        .stTextArea textarea {{
+            background: var(--glass);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            text-align: center;
+        }}
+        .stTextInput>div>div>input:focus,
+        .stTextArea textarea:focus {{
+            outline: none;
+            border-color: var(--electric);
+            box-shadow: 0 0 0 3px rgba(0, 229, 255, .25);
+        }}
+
+        /* راديو شرائحي */
+        .segmented .stRadio > div {{ display:flex; gap:10px; justify-content:center; flex-wrap: wrap; }}
+        .segmented .stRadio label {{
+            padding:10px 18px;
+            border:1px solid var(--border);
+            border-radius:999px;
+            cursor:pointer; font-weight:700; user-select:none;
+            background: var(--glass-2);
+            color: var(--text);
+        }}
+        .segmented .stRadio input {{ display:none; }}
+        .segmented .stRadio [aria-checked="true"] + span {{
+            background: linear-gradient(135deg, var(--violet), var(--electric));
+            color:#0B1020; border-color: transparent;
+            box-shadow: 0 8px 20px rgba(124, 77, 255, .32);
+        }}
+        .segmented .stRadio label:hover {{ border-color: var(--electric); }}
+
+        /* تنبيهات وجداول */
+        .stAlert>div {{ background: var(--glass-2); color: var(--text); border: 1px solid var(--border); border-radius: 12px; }}
+        .stDataFrame, .stTable {{ background: var(--glass) !important; border-radius: 12px !important; }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+# استخدم اسم الصورة الجديدة (كما رفعته في Git)
+set_background("Gemini_Generated_Image_ls8zmgls8zmgls8z.png")
 
 st.markdown('<h2>MOH Business Owner</h2><h4>نظام مراجعة طلبات مشاركة البيانات</h4>', unsafe_allow_html=True)
 
-# ====== مساعدات Google Sheets ======
+# ====== Google Sheets ======
 def _gspread_client():
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
@@ -110,7 +188,7 @@ def is_valid_url(s: str) -> bool:
 df = load_sheet(SPREADSHEET_ID, WORKSHEET_NAME)
 id_col = next((c for c in ID_COLUMN_CANDIDATES if c in df.columns), None)
 if not id_col:
-    st.error("لم يتم العثور على عمود يحتوي على المعرف (ID). يرجى التأكد من وجود عمود 'id' أو تعديل الإعدادات في الكود.")
+    st.error("لم يتم العثور على عمود يحتوي على المعرف (ID).")
     st.stop()
 
 # ====== البحث برقم الطلب ======
@@ -120,7 +198,6 @@ with center:
     sid = st.text_input("أدخل رقم الطلب:", key="search_id_input")
     search_btn = st.button("بحث", use_container_width=True)
 
-# حفظ الاختيار في الجلسة حتى لا تعاد التهيئة عند تغييرWidgets
 if search_btn:
     st.session_state.selected_id = (sid or "").strip()
 
@@ -170,7 +247,7 @@ if selected_row is not None:
     if not is_valid_url(webhook_url):
         st.warning(f"تعذر العثور على رابط ويب هوك صالح في العمود '{WEBHOOK_COLUMN}'. لن يتم إرسال القرار.")
 
-    # ====== واجهة القرار (تصميم أفضل كمحوّل شرائح) ======
+    # ====== واجهة القرار ======
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("### القرار")
 
