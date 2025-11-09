@@ -298,4 +298,16 @@ if selected_row is not None:
                 items.append(item)
 
             payload = {
-                "id": se
+                "id": selected_id,
+                "items": items,
+                "state_checked": REQUIRED_STATE,
+            }
+
+            try:
+                if is_valid_url(webhook_url):
+                    post_with_retry(webhook_url, payload)
+                    st.success("✅ تم إرسال جميع القرارات بنجاح.")
+                else:
+                    st.info("⚠️ لم يتم إرسال القرار لعدم توفر رابط ويب هوك صالح.")
+            except Exception as e:
+                st.error(f"تعذر إرسال القرار عبر الويب هوك: {e}")
