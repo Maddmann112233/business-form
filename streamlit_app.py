@@ -295,14 +295,14 @@ if selected_row is not None:
         use_container_width=True,
         hide_index=True,
         num_rows="fixed",
-        column_config={{
+        column_config={
             "القرار": st.column_config.SelectboxColumn(
                 "القرار", options=["مقبول", "مرفوض"], width="small"
             ),
             "ملاحظات": st.column_config.TextColumn(
                 "ملاحظات", help="يمكنك كتابة ملاحظات حتى لو تمت الموافقة", width="medium"
             ),
-        }}
+        }
     )
 
     # ====== القرار العام ======
