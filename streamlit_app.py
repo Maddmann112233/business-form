@@ -97,18 +97,15 @@ def set_background(png_file):
         }}
 
         /* ===== Segmented-style radio group ===== */
-        .segmented .stRadio {{
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
+        /* Hide default radio buttons */
+        .segmented .stRadio > div[role="radiogroup"] > label > div:first-child {{
+            display: none !important;
         }}
-        .segmented .stRadio > div {{
-            display: flex;
-            justify-content: center;
-        }}
-        .segmented .stRadio div[role="radiogroup"] {{
+
+        /* Style the radio container */
+        .segmented .stRadio > div[role="radiogroup"] {{
             display: flex !important;
-            gap: 8px !important;
+            gap: 12px !important;
             justify-content: center !important;
             flex-wrap: wrap !important;
             background: var(--glass) !important;
@@ -118,104 +115,53 @@ def set_background(png_file):
             width: fit-content !important;
             margin: 0 auto !important;
         }}
-        .segmented .stRadio div[role="radiogroup"] > label {{
-            position: relative !important;
+
+        /* Style each radio label as a pill button */
+        .segmented .stRadio > div[role="radiogroup"] > label {{
             padding: 12px 32px !important;
-            margin: 0 !important;
             border: none !important;
             border-radius: 999px !important;
+            background: transparent !important;
+            color: var(--text) !important;
             cursor: pointer !important;
             font-weight: 700 !important;
             font-size: 15px !important;
             user-select: none !important;
-            background: transparent !important;
-            color: var(--text) !important;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            white-space: nowrap !important;
-        }}
-        /* Hide ALL radio button indicators */
-        .segmented .stRadio input[type="radio"],
-        .segmented .stRadio input[type="radio"] + div,
-        .segmented .stRadio label > div:first-child,
-        .segmented .stRadio label > div[data-testid],
-        .segmented .stRadio label span:first-child {{
-            display: none !important;
-            visibility: hidden !important;
-            position: absolute !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-            width: 0 !important;
-            height: 0 !important;
             margin: 0 !important;
+            min-width: 120px !important;
+            text-align: center !important;
         }}
-        /* Show only the text */
-        .segmented .stRadio label > div:last-child,
-        .segmented .stRadio label > p {{
-            display: inline !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }}
-        /* Active state - when selected */
-        .segmented .stRadio div[role="radiogroup"] > label[data-checked="true"],
-        .segmented .stRadio div[role="radiogroup"] > label:has(input:checked),
-        .segmented .stRadio div[role="radiogroup"] > label:has(input[checked]),
-        .segmented .stRadio div[role="radiogroup"] > label:has(div[data-checked="true"]) {{
-            background: linear-gradient(135deg, var(--violet) 0%, var(--electric) 100%) !important;
-            color: #0B1020 !important;
-            box-shadow: 
-                0 0 20px rgba(0, 229, 255, 0.5),
-                0 0 40px rgba(124, 77, 255, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3) !important;
-            transform: scale(1.02) !important;
-        }}
-        /* Hover state - only for non-selected */
-        .segmented .stRadio div[role="radiogroup"] > label:not([data-checked="true"]):hover,
-        .segmented .stRadio div[role="radiogroup"] > label:not(:has(input:checked)):hover {{
+
+        /* Hover state */
+        .segmented .stRadio > div[role="radiogroup"] > label:hover {{
             background: rgba(124, 77, 255, 0.15) !important;
             color: var(--electric) !important;
             box-shadow: 0 0 10px rgba(0, 229, 255, 0.2) !important;
         }}
 
+        /* Selected state - using input:checked */
+        .segmented .stRadio > div[role="radiogroup"] > label:has(input:checked),
+        .segmented .stRadio > div[role="radiogroup"] > label[data-checked="true"] {{
+            background: linear-gradient(135deg, var(--violet) 0%, var(--electric) 100%) !important;
+            color: #0B1020 !important;
+            border-color: transparent !important;
+            box-shadow: 
+                0 0 20px rgba(0, 229, 255, 0.5),
+                0 0 40px rgba(124, 77, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3) !important;
+            font-weight: 900 !important;
+        }}
+
+        /* Remove any default streamlit radio styling */
+        .segmented .stRadio > div {{
+            background: transparent !important;
+        }}
+
         .stAlert>div {{ background: var(--glass-2); color: var(--text); border: 1px solid var(--border); border-radius: 12px; }}
         .stDataFrame, .stTable {{ background: var(--glass) !important; border-radius: 12px !important; }}
         </style>
-        
-        <script>
-        // Enhanced radio button styling
-        setTimeout(function() {{
-            const radioGroups = document.querySelectorAll('.segmented div[role="radiogroup"]');
-            radioGroups.forEach(group => {{
-                const labels = group.querySelectorAll('label');
-                labels.forEach(label => {{
-                    // Hide radio circles
-                    const radioCircle = label.querySelector('div:first-child');
-                    if (radioCircle && radioCircle.querySelector('input[type="radio"]')) {{
-                        radioCircle.style.display = 'none';
-                    }}
-                    
-                    // Check if selected
-                    const input = label.querySelector('input[type="radio"]');
-                    if (input && input.checked) {{
-                        label.setAttribute('data-checked', 'true');
-                    }}
-                    
-                    // Add change listener
-                    if (input) {{
-                        input.addEventListener('change', function() {{
-                            labels.forEach(l => l.removeAttribute('data-checked'));
-                            if (this.checked) {{
-                                label.setAttribute('data-checked', 'true');
-                            }}
-                        }});
-                    }}
-                }});
-            }});
-        }}, 500);
-        </script>
         """,
         unsafe_allow_html=True
     )
