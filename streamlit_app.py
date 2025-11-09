@@ -96,15 +96,17 @@ def set_background(png_file):
             box-shadow: 0 0 0 3px rgba(0, 229, 255, .25);
         }}
 
-        /* ===== Segmented-style radio group ===== */
+        /* ===== Segmented-style radio group (Fix for red dot) ===== */
         .segmented .stRadio div[role="radiogroup"] {{
             display: flex;
             gap: 10px;
             justify-content: center;
             flex-wrap: wrap;
         }}
-        /* pill base */
+
+        /* Pill base */
         .segmented .stRadio div[role="radiogroup"] > label {{
+            position: relative;
             padding: 10px 18px;
             border: 1px solid var(--border);
             border-radius: 999px;
@@ -114,12 +116,23 @@ def set_background(png_file):
             background: var(--glass-2);
             color: var(--text);
             transition: all 0.15s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }}
-        /* hide default radio dot */
-        .segmented .stRadio div[role="radiogroup"] > label > div:first-child {{
-            display: none;
+
+        /* Hide native dot */
+        .segmented .stRadio input[type="radio"] {{
+            position: absolute !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            margin: 0 !important;
+            accent-color: var(--electric) !important; /* fallback */
         }}
-        /* selected pill using :has() to detect aria-checked */
+
+        /* Detect selected option */
         .segmented .stRadio div[role="radiogroup"] > label:has(div[aria-checked="true"]) {{
             background: linear-gradient(135deg, var(--violet), var(--electric));
             color: #0B1020;
@@ -129,6 +142,7 @@ def set_background(png_file):
             text-shadow: 0 0 4px rgba(255,255,255,0.3);
             transform: scale(1.03);
         }}
+
         .segmented .stRadio div[role="radiogroup"] > label:hover {{
             border-color: var(--electric);
             box-shadow: 0 0 6px rgba(0, 229, 255, 0.3);
@@ -281,14 +295,14 @@ if selected_row is not None:
         use_container_width=True,
         hide_index=True,
         num_rows="fixed",
-        column_config={
+        column_config={{
             "القرار": st.column_config.SelectboxColumn(
                 "القرار", options=["مقبول", "مرفوض"], width="small"
             ),
             "ملاحظات": st.column_config.TextColumn(
                 "ملاحظات", help="يمكنك كتابة ملاحظات حتى لو تمت الموافقة", width="medium"
             ),
-        }
+        }}
     )
 
     # ====== القرار العام ======
