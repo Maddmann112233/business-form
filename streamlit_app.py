@@ -96,49 +96,70 @@ def set_background(png_file):
             box-shadow: 0 0 0 3px rgba(0, 229, 255, .25);
         }}
 
-        /* ===== Segmented-style radio group (Fix for red dot) ===== */
+        /* ===== Segmented-style radio group ===== */
         .segmented .stRadio div[role="radiogroup"] {{
             display: flex;
-            gap: 10px;
+            gap: 12px;
             justify-content: center;
             flex-wrap: wrap;
+            background: var(--glass);
+            padding: 6px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            width: fit-content;
+            margin: 0 auto;
         }}
         .segmented .stRadio div[role="radiogroup"] > label {{
             position: relative;
-            padding: 10px 18px;
-            border: 1px solid var(--border);
+            padding: 12px 32px;
+            border: none;
             border-radius: 999px;
             cursor: pointer;
             font-weight: 700;
+            font-size: 15px;
             user-select: none;
-            background: var(--glass-2);
+            background: transparent;
             color: var(--text);
-            transition: all 0.15s ease-in-out;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
+            white-space: nowrap;
         }}
+        /* Hide the actual radio input completely */
         .segmented .stRadio input[type="radio"] {{
+            display: none !important;
+            visibility: hidden !important;
             position: absolute !important;
             opacity: 0 !important;
             pointer-events: none !important;
             width: 0 !important;
             height: 0 !important;
             margin: 0 !important;
-            accent-color: var(--electric) !important; /* fallback */
         }}
+        /* Hide the radio circle div */
+        .segmented .stRadio div[role="radiogroup"] > label > div:first-child {{
+            display: none !important;
+        }}
+        /* Active state - when selected */
+        .segmented .stRadio div[role="radiogroup"] > label:has(input[aria-checked="true"]),
         .segmented .stRadio div[role="radiogroup"] > label:has(div[aria-checked="true"]) {{
-            background: linear-gradient(135deg, var(--violet), var(--electric));
+            background: linear-gradient(135deg, var(--violet) 0%, var(--electric) 100%);
             color: #0B1020;
             border-color: transparent;
-            box-shadow: 0 0 12px rgba(0, 229, 255, 0.6),
-                        0 0 24px rgba(124, 77, 255, 0.5);
-            text-shadow: 0 0 4px rgba(255,255,255,0.3);
-            transform: scale(1.03);
+            box-shadow: 
+                0 0 20px rgba(0, 229, 255, 0.5),
+                0 0 40px rgba(124, 77, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+            transform: scale(1.02);
         }}
-        .segmented .stRadio div[role="radiogroup"] > label:hover {{
-            border-color: var(--electric);
-            box-shadow: 0 0 6px rgba(0, 229, 255, 0.3);
+        /* Hover state - only for non-selected */
+        .segmented .stRadio div[role="radiogroup"] > label:not(:has(input[aria-checked="true"])):not(:has(div[aria-checked="true"])):hover {{
+            background: rgba(124, 77, 255, 0.15);
+            color: var(--electric);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
         }}
 
         .stAlert>div {{ background: var(--glass-2); color: var(--text); border: 1px solid var(--border); border-radius: 12px; }}
