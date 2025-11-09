@@ -35,7 +35,6 @@ def set_background(png_file):
             background-repeat: no-repeat;
             color: #E9F5FF;
         }}
-        /* overlay أزرق/بنفسجي لزيادة تباين النص */
         .stApp::before {{
             content: "";
             position: fixed;
@@ -47,16 +46,14 @@ def set_background(png_file):
             z-index: 0;
         }}
 
-        /* لوحة ألوان مستخرجة من الخلفية */
         :root {{
-            --electric: #00E5FF;     /* سماوي متوهج */
-            --violet:  #7C4DFF;     /* بنفسجي نيون */
-            --indigo:  #1A1F3B;     /* داكن أساسي */
+            --electric: #00E5FF;
+            --violet:  #7C4DFF;
+            --indigo:  #1A1F3B;
             --glass:   rgba(13, 16, 34, 0.42);
             --glass-2: rgba(13, 16, 34, 0.55);
             --border:  rgba(124, 77, 255, 0.35);
             --text:    #E9F5FF;
-            --muted:   #B9D7FF;
         }}
 
         body, .stApp {{ direction: rtl; text-align: right; font-family: Tahoma, Arial, sans-serif; }}
@@ -69,7 +66,6 @@ def set_background(png_file):
             text-align: center;
         }}
 
-        /* أزرار */
         .stButton>button {{
             background: linear-gradient(135deg, var(--violet), var(--electric));
             color: #0B1020;
@@ -84,7 +80,6 @@ def set_background(png_file):
         .stButton>button:hover {{ filter: brightness(1.06); box-shadow: 0 16px 36px rgba(124, 77, 255, .28); }}
         .stButton>button:active {{ transform: translateY(1px) scale(.99); }}
 
-        /* مدخلات ونصوص */
         .stTextInput>div>div>input,
         .stTextArea textarea {{
             background: var(--glass);
@@ -100,7 +95,6 @@ def set_background(png_file):
             box-shadow: 0 0 0 3px rgba(0, 229, 255, .25);
         }}
 
-        /* راديو شرائحي */
         .segmented .stRadio > div {{ display:flex; gap:10px; justify-content:center; flex-wrap: wrap; }}
         .segmented .stRadio label {{
             padding:10px 18px;
@@ -118,15 +112,12 @@ def set_background(png_file):
         }}
         .segmented .stRadio label:hover {{ border-color: var(--electric); }}
 
-        /* تنبيهات وجداول */
         .stAlert>div {{ background: var(--glass-2); color: var(--text); border: 1px solid var(--border); border-radius: 12px; }}
-        .stDataFrame, .stTable {{ background: var(--glass) !important; border-radius: 12px !important; }}
         </style>
         """,
         unsafe_allow_html=True
     )
 
-# استخدم اسم الصورة الجديدة (كما رفعته في Git)
 set_background("Gemini_Generated_Image_ls8zmgls8zmgls8z.png")
 
 st.markdown('<h2>MOH Business Owner</h2><h4>نظام مراجعة طلبات مشاركة البيانات</h4>', unsafe_allow_html=True)
@@ -154,27 +145,6 @@ def detect_json_column(row: pd.Series):
             if (s.startswith("{") and s.endswith("}")) or (s.startswith("[") and s.endswith("]")):
                 return col
     return None
-
-def parse_json_to_table(text: str) -> pd.DataFrame | None:
-    try:
-        data = json.loads(text)
-    except Exception:
-        return None
-
-    if isinstance(data, list):
-        if not data:
-            return pd.DataFrame()
-        if all(isinstance(x, dict) for x in data):
-            return pd.json_normalize(data, max_level=1)
-        return pd.DataFrame({"القيمة": data})
-
-    if isinstance(data, dict):
-        flat = pd.json_normalize(data, max_level=1)
-        if flat.shape[0] == 1:
-            return pd.DataFrame(flat.iloc[0]).reset_index(names=["الحقل"]).rename(columns={0: "القيمة"})
-        return flat
-
-    return pd.DataFrame({"القيمة": [data]})
 
 def is_valid_url(s: str) -> bool:
     s = (s or "").strip()
@@ -228,21 +198,7 @@ if selected_row is not None:
         st.error(f"لا يمكن متابعة المعالجة. الحالة الحالية هي: {current_state}")
         st.stop()
 
-    # ====== استخراج جدول الطلب من JSON ======
-    json_col = JSON_COLUMN_NAME or detect_json_column(selected_row)
-    if not json_col:
-        st.error("لم يتم العثور على عمود يحتوي على JSON في هذا الصف.")
-        st.stop()
-
-    table = parse_json_to_table(str(selected_row[json_col]).strip())
-    if table is None:
-        st.error("تعذر تحليل محتوى JSON.")
-        st.stop()
-
-    st.markdown("### تفاصيل الطلب")
-    st.dataframe(table, use_container_width=True)
-
-    # ====== قراءة رابط الويب هوك من Business Authorize ======
+    # ====== قراءة رابط الويب هوك ======
     webhook_url = str(selected_row.get(WEBHOOK_COLUMN, "")).strip()
     if not is_valid_url(webhook_url):
         st.warning(f"تعذر العثور على رابط ويب هوك صالح في العمود '{WEBHOOK_COLUMN}'. لن يتم إرسال القرار.")
