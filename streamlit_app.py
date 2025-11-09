@@ -120,7 +120,7 @@ def set_background(png_file):
         unsafe_allow_html=True
     )
 
-# استخدم اسم الصورة الجديدة
+# خلفية
 set_background("Gemini_Generated_Image_ls8zmgls8zmgls8z.png")
 
 st.markdown('<h2>MOH Business Owner</h2><h4>نظام مراجعة طلبات مشاركة البيانات</h4>', unsafe_allow_html=True)
@@ -249,7 +249,7 @@ if selected_row is not None:
         st.error("تعذر تحليل محتوى JSON.")
         st.stop()
 
-    # ====== إنشاء جدول قابل للتحرير ======
+    # ====== جدول قابل للتحرير: قرار وملاحظات لكل عنصر ======
     editable = table.copy()
     editable["القرار"] = editable.get("القرار", "مقبول")
     editable["ملاحظات"] = editable.get("ملاحظات", "")
@@ -270,20 +270,58 @@ if selected_row is not None:
         }
     )
 
-    # ====== تحقق أن المرفوض لديه ملاحظات ======
-    missing_notes = any(
+    # ====== قرار عام للطلب بالكامل ======
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("### القرار العام للطلب")
+
+    if "overall_decision" not in st.session_state:
+        st.session_state.overall_decision = "موافقة"
+    if "overall_note" not in st.session_state:
+        st.session_state.overall_note = ""
+
+    with st.container():
+        st.markdown('<div class="segmented">', unsafe_allow_html=True)
+        st.session_state.overall_decision = st.radio(
+            "اختر القرار العام:",
+            ["موافقة", "غير موافق"],
+            horizontal=True,
+            key="overall_decision_radio",
+            index=0 if st.session_state.overall_decision == "موافقة" else 1,
+            label_visibility="collapsed",
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    if st.session_state.overall_decision == "غير موافق":
+        st.session_state.overall_note = st.text_area(
+            "سبب الرفض العام (إلزامي):",
+            value=st.session_state.overall_note,
+            key="overall_note_ar"
+        )
+    else:
+        st.session_state.overall_note = st.text_area(
+            "ملاحظات عامة (اختياري):",
+            value=st.session_state.overall_note,
+            key="overall_note_ar_opt"
+        )
+
+    # ====== تحقق: أي عنصر مرفوض يجب أن يملك ملاحظة ======
+    missing_item_notes = any(
         (row["القرار"] == "مرفوض" and not str(row["ملاحظات"]).strip())
         for _, row in edited.iterrows()
     )
 
+    # ====== قراءة رابط الويب هوك ======
     webhook_url = str(selected_row.get(WEBHOOK_COLUMN, "")).strip()
     if not is_valid_url(webhook_url):
         st.warning(f"تعذر العثور على رابط ويب هوك صالح في العمود '{WEBHOOK_COLUMN}'.")
 
-    submit = st.button("إرسال القرارات")
+    # ====== إرسال ======
+    submit = st.button("إرسال القرار النهائي")
     if submit:
-        if missing_notes:
+        if missing_item_notes:
             st.warning("يرجى كتابة ملاحظات لكل عنصر مرفوض قبل الإرسال.")
+        elif st.session_state.overall_decision == "غير موافق" and not st.session_state.overall_note.strip():
+            st.warning("يرجى كتابة سبب الرفض العام قبل الإرسال.")
         else:
             # بناء مصفوفة العناصر
             items = []
@@ -291,22 +329,22 @@ if selected_row is not None:
                 item = {
                     "decision": row["القرار"],
                     "note": str(row["ملاحظات"]).strip(),
-                    "data": {
-                        k: v for k, v in row.items() if k not in ["القرار", "ملاحظات"]
-                    },
+                    "data": {k: v for k, v in row.items() if k not in ["القرار", "ملاحظات"]},
                 }
                 items.append(item)
 
             payload = {
                 "id": selected_id,
                 "items": items,
+                "overall_decision": st.session_state.overall_decision,  # موافقة / غير موافق
+                "overall_note": st.session_state.overall_note.strip(),
                 "state_checked": REQUIRED_STATE,
             }
 
             try:
                 if is_valid_url(webhook_url):
                     post_with_retry(webhook_url, payload)
-                    st.success("✅ تم إرسال جميع القرارات بنجاح.")
+                    st.success("✅ تم إرسال القرار العام وقرارات العناصر بنجاح.")
                 else:
                     st.info("⚠️ لم يتم إرسال القرار لعدم توفر رابط ويب هوك صالح.")
             except Exception as e:
