@@ -96,22 +96,42 @@ def set_background(png_file):
             box-shadow: 0 0 0 3px rgba(0, 229, 255, .25);
         }}
 
-        .segmented .stRadio > div {{ display:flex; gap:10px; justify-content:center; flex-wrap: wrap; }}
+        .segmented .stRadio > div {{
+            display:flex; gap:10px; justify-content:center; flex-wrap: wrap;
+        }}
         .segmented .stRadio label {{
             padding:10px 18px;
             border:1px solid var(--border);
             border-radius:999px;
-            cursor:pointer; font-weight:700; user-select:none;
+            cursor:pointer;
+            font-weight:700;
+            user-select:none;
             background: var(--glass-2);
             color: var(--text);
+            transition: all 0.15s ease-in-out;
         }}
         .segmented .stRadio input {{ display:none; }}
+
+        /* === Radio button color customization === */
         .segmented .stRadio [aria-checked="true"] + span {{
             background: linear-gradient(135deg, var(--violet), var(--electric));
-            color:#0B1020; border-color: transparent;
-            box-shadow: 0 8px 20px rgba(124, 77, 255, .32);
+            color: #0B1020;
+            border-color: transparent;
+            box-shadow: 0 0 12px rgba(0, 229, 255, 0.6),
+                        0 0 24px rgba(124, 77, 255, 0.5);
+            text-shadow: 0 0 4px rgba(255,255,255,0.3);
+            transform: scale(1.03);
         }}
-        .segmented .stRadio label:hover {{ border-color: var(--electric); }}
+        .segmented .stRadio [aria-checked="false"] + span {{
+            background: var(--glass-2);
+            border-color: var(--border);
+            color: var(--text);
+            opacity: 0.85;
+        }}
+        .segmented .stRadio label:hover span {{
+            border-color: var(--electric);
+            box-shadow: 0 0 6px rgba(0, 229, 255, 0.3);
+        }}
 
         .stAlert>div {{ background: var(--glass-2); color: var(--text); border: 1px solid var(--border); border-radius: 12px; }}
         .stDataFrame, .stTable {{ background: var(--glass) !important; border-radius: 12px !important; }}
@@ -120,7 +140,7 @@ def set_background(png_file):
         unsafe_allow_html=True
     )
 
-# خلفية
+# الخلفية
 set_background("Gemini_Generated_Image_ls8zmgls8zmgls8z.png")
 
 st.markdown('<h2>MOH Business Owner</h2><h4>نظام مراجعة طلبات مشاركة البيانات</h4>', unsafe_allow_html=True)
@@ -249,7 +269,7 @@ if selected_row is not None:
         st.error("تعذر تحليل محتوى JSON.")
         st.stop()
 
-    # ====== جدول قابل للتحرير: قرار وملاحظات لكل عنصر ======
+    # ====== جدول قابل للتحرير ======
     editable = table.copy()
     editable["القرار"] = editable.get("القرار", "مقبول")
     editable["ملاحظات"] = editable.get("ملاحظات", "")
@@ -270,7 +290,7 @@ if selected_row is not None:
         }
     )
 
-    # ====== قرار عام للطلب بالكامل ======
+    # ====== القرار العام ======
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("### القرار العام للطلب")
 
@@ -292,25 +312,16 @@ if selected_row is not None:
         st.markdown('</div>', unsafe_allow_html=True)
 
     if st.session_state.overall_decision == "غير موافق":
-        st.session_state.overall_note = st.text_area(
-            "سبب الرفض العام (إلزامي):",
-            value=st.session_state.overall_note,
-            key="overall_note_ar"
-        )
+        st.session_state.overall_note = st.text_area("سبب الرفض العام (إلزامي):", value=st.session_state.overall_note)
     else:
-        st.session_state.overall_note = st.text_area(
-            "ملاحظات عامة (اختياري):",
-            value=st.session_state.overall_note,
-            key="overall_note_ar_opt"
-        )
+        st.session_state.overall_note = st.text_area("ملاحظات عامة (اختياري):", value=st.session_state.overall_note)
 
-    # ====== تحقق: أي عنصر مرفوض يجب أن يملك ملاحظة ======
+    # ====== تحقق ======
     missing_item_notes = any(
         (row["القرار"] == "مرفوض" and not str(row["ملاحظات"]).strip())
         for _, row in edited.iterrows()
     )
 
-    # ====== قراءة رابط الويب هوك ======
     webhook_url = str(selected_row.get(WEBHOOK_COLUMN, "")).strip()
     if not is_valid_url(webhook_url):
         st.warning(f"تعذر العثور على رابط ويب هوك صالح في العمود '{WEBHOOK_COLUMN}'.")
@@ -323,7 +334,6 @@ if selected_row is not None:
         elif st.session_state.overall_decision == "غير موافق" and not st.session_state.overall_note.strip():
             st.warning("يرجى كتابة سبب الرفض العام قبل الإرسال.")
         else:
-            # بناء مصفوفة العناصر
             items = []
             for _, row in edited.iterrows():
                 item = {
@@ -336,7 +346,7 @@ if selected_row is not None:
             payload = {
                 "id": selected_id,
                 "items": items,
-                "overall_decision": st.session_state.overall_decision,  # موافقة / غير موافق
+                "overall_decision": st.session_state.overall_decision,
                 "overall_note": st.session_state.overall_note.strip(),
                 "state_checked": REQUIRED_STATE,
             }
