@@ -97,13 +97,19 @@ def set_background(png_file):
         }}
 
         /* ===== Segmented-style radio group ===== */
-        /* Hide default radio buttons */
-        .segmented .stRadio > div[role="radiogroup"] > label > div:first-child {{
+        /* Target the radio group more aggressively */
+        div[data-testid="stHorizontalBlock"] .stRadio [role="radiogroup"] > label > div:first-child,
+        .segmented [role="radiogroup"] > label > div:first-child {{
             display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            opacity: 0 !important;
+            position: absolute !important;
         }}
 
         /* Style the radio container */
-        .segmented .stRadio > div[role="radiogroup"] {{
+        div[data-testid="stHorizontalBlock"] .stRadio [role="radiogroup"],
+        .segmented [role="radiogroup"] {{
             display: flex !important;
             gap: 12px !important;
             justify-content: center !important;
@@ -117,7 +123,8 @@ def set_background(png_file):
         }}
 
         /* Style each radio label as a pill button */
-        .segmented .stRadio > div[role="radiogroup"] > label {{
+        div[data-testid="stHorizontalBlock"] .stRadio [role="radiogroup"] > label,
+        .segmented [role="radiogroup"] > label {{
             padding: 12px 32px !important;
             border: none !important;
             border-radius: 999px !important;
@@ -127,36 +134,34 @@ def set_background(png_file):
             font-weight: 700 !important;
             font-size: 15px !important;
             user-select: none !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            transition: all 0.2s ease !important;
             margin: 0 !important;
             min-width: 120px !important;
             text-align: center !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }}
 
         /* Hover state */
-        .segmented .stRadio > div[role="radiogroup"] > label:hover {{
+        div[data-testid="stHorizontalBlock"] .stRadio [role="radiogroup"] > label:hover,
+        .segmented [role="radiogroup"] > label:hover {{
             background: rgba(124, 77, 255, 0.15) !important;
             color: var(--electric) !important;
             box-shadow: 0 0 10px rgba(0, 229, 255, 0.2) !important;
         }}
 
-        /* Selected state - using input:checked */
-        .segmented .stRadio > div[role="radiogroup"] > label:has(input:checked),
-        .segmented .stRadio > div[role="radiogroup"] > label[data-checked="true"] {{
+        /* Selected state */
+        div[data-testid="stHorizontalBlock"] .stRadio [role="radiogroup"] > label:has(input:checked),
+        .segmented [role="radiogroup"] > label:has(input:checked) {{
             background: linear-gradient(135deg, var(--violet) 0%, var(--electric) 100%) !important;
             color: #0B1020 !important;
-            border-color: transparent !important;
             box-shadow: 
                 0 0 20px rgba(0, 229, 255, 0.5),
                 0 0 40px rgba(124, 77, 255, 0.3),
                 inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
             text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3) !important;
             font-weight: 900 !important;
-        }}
-
-        /* Remove any default streamlit radio styling */
-        .segmented .stRadio > div {{
-            background: transparent !important;
         }}
 
         .stAlert>div {{ background: var(--glass-2); color: var(--text); border: 1px solid var(--border); border-radius: 12px; }}
@@ -341,17 +346,16 @@ if selected_row is not None:
     if "overall_note" not in st.session_state:
         st.session_state.overall_note = ""
 
-    with st.container():
-        st.markdown('<div class="segmented">', unsafe_allow_html=True)
-        st.session_state.overall_decision = st.radio(
-            "اختر القرار العام:",
-            ["موافقة", "غير موافق"],
-            horizontal=True,
-            key="overall_decision_radio",
-            index=0 if st.session_state.overall_decision == "موافقة" else 1,
-            label_visibility="collapsed",
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="segmented">', unsafe_allow_html=True)
+    st.session_state.overall_decision = st.radio(
+        "اختر القرار العام:",
+        ["موافقة", "غير موافق"],
+        horizontal=True,
+        key="overall_decision_radio",
+        index=0 if st.session_state.overall_decision == "موافقة" else 1,
+        label_visibility="collapsed",
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
 
     if st.session_state.overall_decision == "غير موافق":
         st.session_state.overall_note = st.text_area("سبب الرفض العام (إلزامي):", value=st.session_state.overall_note)
