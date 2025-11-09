@@ -96,24 +96,31 @@ def set_background(png_file):
             box-shadow: 0 0 0 3px rgba(0, 229, 255, .25);
         }}
 
-        .segmented .stRadio > div {{
-            display:flex; gap:10px; justify-content:center; flex-wrap: wrap;
+        /* ===== Segmented-style radio group ===== */
+        .segmented .stRadio div[role="radiogroup"] {{
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
         }}
-        .segmented .stRadio label {{
-            padding:10px 18px;
-            border:1px solid var(--border);
-            border-radius:999px;
-            cursor:pointer;
-            font-weight:700;
-            user-select:none;
+        /* pill base */
+        .segmented .stRadio div[role="radiogroup"] > label {{
+            padding: 10px 18px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 700;
+            user-select: none;
             background: var(--glass-2);
             color: var(--text);
             transition: all 0.15s ease-in-out;
         }}
-        .segmented .stRadio input {{ display:none; }}
-
-        /* === Radio button color customization === */
-        .segmented .stRadio [aria-checked="true"] + span {{
+        /* hide default radio dot */
+        .segmented .stRadio div[role="radiogroup"] > label > div:first-child {{
+            display: none;
+        }}
+        /* selected pill using :has() to detect aria-checked */
+        .segmented .stRadio div[role="radiogroup"] > label:has(div[aria-checked="true"]) {{
             background: linear-gradient(135deg, var(--violet), var(--electric));
             color: #0B1020;
             border-color: transparent;
@@ -122,13 +129,7 @@ def set_background(png_file):
             text-shadow: 0 0 4px rgba(255,255,255,0.3);
             transform: scale(1.03);
         }}
-        .segmented .stRadio [aria-checked="false"] + span {{
-            background: var(--glass-2);
-            border-color: var(--border);
-            color: var(--text);
-            opacity: 0.85;
-        }}
-        .segmented .stRadio label:hover span {{
+        .segmented .stRadio div[role="radiogroup"] > label:hover {{
             border-color: var(--electric);
             box-shadow: 0 0 6px rgba(0, 229, 255, 0.3);
         }}
