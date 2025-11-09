@@ -103,8 +103,6 @@ def set_background(png_file):
             justify-content: center;
             flex-wrap: wrap;
         }}
-
-        /* Pill base */
         .segmented .stRadio div[role="radiogroup"] > label {{
             position: relative;
             padding: 10px 18px;
@@ -120,8 +118,6 @@ def set_background(png_file):
             align-items: center;
             gap: 8px;
         }}
-
-        /* Hide native dot */
         .segmented .stRadio input[type="radio"] {{
             position: absolute !important;
             opacity: 0 !important;
@@ -131,8 +127,6 @@ def set_background(png_file):
             margin: 0 !important;
             accent-color: var(--electric) !important; /* fallback */
         }}
-
-        /* Detect selected option */
         .segmented .stRadio div[role="radiogroup"] > label:has(div[aria-checked="true"]) {{
             background: linear-gradient(135deg, var(--violet), var(--electric));
             color: #0B1020;
@@ -142,7 +136,6 @@ def set_background(png_file):
             text-shadow: 0 0 4px rgba(255,255,255,0.3);
             transform: scale(1.03);
         }}
-
         .segmented .stRadio div[role="radiogroup"] > label:hover {{
             border-color: var(--electric);
             box-shadow: 0 0 6px rgba(0, 229, 255, 0.3);
@@ -155,7 +148,6 @@ def set_background(png_file):
         unsafe_allow_html=True
     )
 
-# الخلفية
 set_background("Gemini_Generated_Image_ls8zmgls8zmgls8z.png")
 
 st.markdown('<h2>MOH Business Owner</h2><h4>نظام مراجعة طلبات مشاركة البيانات</h4>', unsafe_allow_html=True)
@@ -284,7 +276,24 @@ if selected_row is not None:
         st.error("تعذر تحليل محتوى JSON.")
         st.stop()
 
-    # ====== جدول قابل للتحرير ======
+    # ===== ترجمة أسماء الأعمدة إلى العربية =====
+    column_translation = {
+        "row": "الصف",
+        "index": "الصف",        # في حال وُجد
+        "input": "المدخل",
+        "output": "المخرج",
+        "purpose": "الغاية",
+        "goal": "الهدف",
+        "notes": "ملاحظات",
+        "comment": "تعليق",
+        "status": "الحالة",
+        "value": "القيمة",
+        "field": "الحقل",
+        "reason": "السبب",
+    }
+    table.rename(columns=column_translation, inplace=True)
+
+    # ====== جدول قابل للتحرير: قرار وملاحظات لكل عنصر ======
     editable = table.copy()
     editable["القرار"] = editable.get("القرار", "مقبول")
     editable["ملاحظات"] = editable.get("ملاحظات", "")
