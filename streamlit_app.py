@@ -62,8 +62,8 @@ def set_background(png_file):
         .block-container > :not(style) {{ backdrop-filter: blur(6px); }}
 
         h1, h2, h3, h4 {{
-            color: var(--electric) !important;
-            text-shadow: 0 1px 12px rgba(0,0,0,.35);
+            color: #FFFFFF !important;
+            text-shadow: 0 2px 16px rgba(0,0,0,.45);
             text-align: center;
         }}
 
