@@ -96,79 +96,6 @@ def set_background(png_file):
             box-shadow: 0 0 0 3px rgba(0, 229, 255, .25);
         }}
 
-        /* ===== Radio Button Styling - Complete Override ===== */
-        
-        /* Hide the default radio circle completely */
-        [data-testid="stHorizontalBlock"] label[data-baseweb="radio"] > div:first-child,
-        .stRadio label[data-baseweb="radio"] > div:first-child {{
-            display: none !important;
-        }}
-        
-        /* Container styling */
-        [data-testid="stHorizontalBlock"] [role="radiogroup"],
-        .stRadio [role="radiogroup"] {{
-            display: flex !important;
-            gap: 10px !important;
-            justify-content: center !important;
-            background: var(--glass) !important;
-            padding: 8px !important;
-            border-radius: 999px !important;
-            border: 1px solid var(--border) !important;
-            width: fit-content !important;
-            margin: 0 auto !important;
-        }}
-        
-        /* Each radio option label */
-        [data-testid="stHorizontalBlock"] label[data-baseweb="radio"],
-        .stRadio label[data-baseweb="radio"] {{
-            position: relative !important;
-            padding: 14px 36px !important;
-            margin: 0 !important;
-            border-radius: 999px !important;
-            background: transparent !important;
-            color: var(--text) !important;
-            font-weight: 700 !important;
-            font-size: 15px !important;
-            cursor: pointer !important;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            user-select: none !important;
-            border: none !important;
-            min-width: 130px !important;
-            text-align: center !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }}
-        
-        /* Hover state */
-        [data-testid="stHorizontalBlock"] label[data-baseweb="radio"]:hover,
-        .stRadio label[data-baseweb="radio"]:hover {{
-            background: rgba(124, 77, 255, 0.2) !important;
-            color: var(--electric) !important;
-            box-shadow: 0 4px 16px rgba(0, 229, 255, 0.15) !important;
-            transform: translateY(-1px) !important;
-        }}
-        
-        /* Selected state - using input:checked */
-        [data-testid="stHorizontalBlock"] label[data-baseweb="radio"]:has(input:checked),
-        .stRadio label[data-baseweb="radio"]:has(input:checked) {{
-            background: linear-gradient(135deg, var(--violet), var(--electric)) !important;
-            color: #0B1020 !important;
-            box-shadow: 
-                0 8px 24px rgba(0, 229, 255, 0.4),
-                0 4px 12px rgba(124, 77, 255, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
-            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.4) !important;
-            font-weight: 900 !important;
-            transform: scale(1.02) !important;
-        }}
-        
-        /* Remove hover effect when selected */
-        [data-testid="stHorizontalBlock"] label[data-baseweb="radio"]:has(input:checked):hover,
-        .stRadio label[data-baseweb="radio"]:has(input:checked):hover {{
-            transform: scale(1.02) !important;
-        }}
-
         .stAlert>div {{ background: var(--glass-2); color: var(--text); border: 1px solid var(--border); border-radius: 12px; }}
         .stDataFrame, .stTable {{ background: var(--glass) !important; border-radius: 12px !important; }}
         </style>
@@ -178,7 +105,8 @@ def set_background(png_file):
 
 set_background("Gemini_Generated_Image_ls8zmgls8zmgls8z.png")
 
-st.markdown('<h2>MOH Business Owner</h2><h4>نظام مراجعة طلبات مشاركة البيانات</h4>', unsafe_allow_html=True)
+# ====== العناوين ======
+st.markdown('<h2 style="color:white;">MOH Business Owner</h2><h4 style="color:white;">نظام مراجعة طلبات مشاركة البيانات</h4>', unsafe_allow_html=True)
 
 # ====== Google Sheets ======
 @st.cache_resource
@@ -257,7 +185,7 @@ if not id_col:
     st.stop()
 
 # ====== البحث برقم الطلب ======
-st.markdown("### البحث برقم الطلب")
+st.markdown('<h3 style="color:white;">البحث برقم الطلب</h3>', unsafe_allow_html=True)
 center = st.columns([1, 3, 1])[1]
 with center:
     sid = st.text_input("أدخل رقم الطلب:", key="search_id_input")
@@ -326,7 +254,7 @@ if selected_row is not None:
     editable["القرار"] = editable.get("القرار", "مقبول")
     editable["ملاحظات"] = editable.get("ملاحظات", "")
 
-    st.markdown("### تفاصيل الطلب")
+    st.markdown('<h3 style="color:white;">تفاصيل الطلب</h3>', unsafe_allow_html=True)
     edited = st.data_editor(
         editable.reset_index(drop=True),
         use_container_width=True,
@@ -344,7 +272,7 @@ if selected_row is not None:
 
     # ====== القرار العام ======
     st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown("### القرار العام للطلب")
+    st.markdown('<h3 style="color:white;">القرار العام للطلب</h3>', unsafe_allow_html=True)
 
     if "overall_decision" not in st.session_state:
         st.session_state.overall_decision = "موافقة"
